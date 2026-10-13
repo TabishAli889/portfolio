@@ -1,0 +1,672 @@
+@import 'tailwindcss';
+
+/* ===========================================================================
+   Design tokens
+   ===========================================================================
+   Tailwind 4 reads these from `@theme`, which generates the matching utility
+   classes (bg-ink-900, text-neon-cyan, font-display, ...).
+   =========================================================================== */
+
+@theme {
+  /* Base surfaces: near-black with a cool blue cast, not pure grey. */
+  --color-ink-950: #04050a;
+  --color-ink-900: #070912;
+  --color-ink-850: #0a0d1a;
+  --color-ink-800: #0f1322;
+  --color-ink-700: #171c2e;
+  --color-ink-600: #222942;
+  --color-ink-500: #323b5a;
+
+  /* Neon accents. */
+  --color-neon-cyan: #22d3ee;
+  --color-neon-magenta: #f472d0;
+  --color-neon-violet: #8b5cf6;
+  --color-neon-lime: #a3e635;
+
+  /* Text. */
+  --color-fog-50: #f4f7ff;
+  --color-fog-200: #d3dcf2;
+  --color-fog-400: #97a3c4;
+  --color-fog-500: #6f7c9e;
+
+  --font-display: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-code), ui-monospace, monospace;
+
+  /* Reusable gradient for headings and borders. */
+  --gradient-neon: linear-gradient(
+    110deg,
+    var(--color-neon-cyan) 0%,
+    var(--color-neon-violet) 50%,
+    var(--color-neon-magenta) 100%
+  );
+
+  --animate-aurora: aurora 26s ease-in-out infinite;
+  --animate-aurora-slow: aurora 38s ease-in-out infinite reverse;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-caret: caret 1.1s step-end infinite;
+  --animate-pulse-ring: pulse-ring 2.6s ease-out infinite;
+  --animate-marquee: marquee 38s linear infinite;
+}
+
+@keyframes aurora {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(6%, -4%, 0) scale(1.12);
+  }
+  66% {
+    transform: translate3d(-5%, 5%, 0) scale(0.94);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-neon-cyan) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 14px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ===========================================================================
+   Base
+   =========================================================================== */
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    /* Consumed by the sticky-header offset and the scroll-margin on sections. */
+    --header-height: 4.5rem;
+  }
+
+  * {
+    border-color: color-mix(in oklab, var(--color-ink-600) 70%, transparent);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Anchor links land below the sticky header instead of under it. */
+    scroll-padding-top: var(--header-height);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-ink-950);
+    color: var(--color-fog-200);
+    font-family: var(--font-sans);
+    /* `overflow-x: clip` rather than `hidden`: it stops sideways scroll from
+       the aurora blobs WITHOUT creating a scroll container, so it does not
+       become a clipping ancestor for the neon glows on cards and buttons.
+       This is the exact trap that cut off the glows in the earlier project. */
+    overflow-x: clip;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--color-fog-50);
+    /* Headings often carry a text glow; give descenders room so it is not
+       visually cropped by the line box. */
+    line-height: 1.12;
+    padding-block: 0.08em;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-neon-violet) 45%, transparent);
+    color: var(--color-fog-50);
+  }
+
+  /* Visible, on-theme focus ring for keyboard users. */
+  :focus-visible {
+    outline: 2px solid var(--color-neon-cyan);
+    outline-offset: 3px;
+    border-radius: 0.35rem;
+  }
+
+  /* Scrollbar, dark theme aware. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-ink-900);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-ink-600);
+    border-radius: 999px;
+    border: 2px solid var(--color-ink-900);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-500);
+  }
+}
+
+/* ===========================================================================
+   Components
+   ===========================================================================
+   Written as plain classes (not @apply chains) so the glow geometry is
+   explicit and auditable - these are the rules most likely to get clipped.
+   =========================================================================== */
+
+@layer components {
+  /* --- Glass card ------------------------------------------------------- */
+  .glass {
+    position: relative;
+    background: linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--color-ink-800) 88%, transparent),
+      color-mix(in oklab, var(--color-ink-900) 94%, transparent)
+    );
+    border: 1px solid color-mix(in oklab, var(--color-ink-600) 85%, transparent);
+    backdrop-filter: blur(14px) saturate(130%);
+    border-radius: 1rem;
+    /* NOTE: no `overflow: hidden` here on purpose. Child glows and the
+       gradient border below both paint outside the box. */
+  }
+
+  /* Gradient hairline that lights up on hover, drawn with a mask so it stays
+     a 1px ring instead of bleeding into the card fill. */
+  .glass-ring::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--gradient-neon);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .glass-ring:hover::after,
+  .glass-ring:focus-within::after {
+    opacity: 0.9;
+  }
+
+  /* --- Glow halo -------------------------------------------------------- */
+  /*
+   * The halo is a blurred pseudo-element with NEGATIVE inset, so it extends
+   * past its own box. For that to be visible the element needs room around it
+   * and no clipping ancestor; `.glow-room` below provides the room.
+   */
+  .glow-halo::before {
+    content: '';
+    position: absolute;
+    inset: -28px;
+    border-radius: inherit;
+    background: radial-gradient(
+      60% 60% at 50% 50%,
+      color-mix(in oklab, var(--color-neon-cyan) 26%, transparent),
+      transparent 72%
+    );
+    filter: blur(26px);
+    opacity: 0;
+    transition: opacity 0.45s ease;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .glow-halo:hover::before,
+  .glow-halo:focus-within::before {
+    opacity: 1;
+  }
+
+  .glow-halo-magenta::before {
+    background: radial-gradient(
+      60% 60% at 50% 50%,
+      color-mix(in oklab, var(--color-neon-magenta) 26%, transparent),
+      transparent 72%
+    );
+  }
+
+  .glow-halo-violet::before {
+    background: radial-gradient(
+      60% 60% at 50% 50%,
+      color-mix(in oklab, var(--color-neon-violet) 28%, transparent),
+      transparent 72%
+    );
+  }
+
+  /*
+   * Padding reserved around glowing children.
+   *
+   * Every grid or flex row that contains a `.glow-halo` element gets this, so
+   * the halo has somewhere to paint. Without it the halo is cut off at the
+   * grid cell edge even though nothing sets `overflow: hidden` - the classic
+   * "my glow is clipped" symptom.
+   */
+  .glow-room {
+    padding: 1.75rem;
+    margin: -1.75rem;
+  }
+
+  /* --- Buttons ---------------------------------------------------------- */
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    padding: 0.7rem 1.35rem;
+    font-size: 0.925rem;
+    font-weight: 500;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.3s ease,
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  .btn-primary {
+    color: var(--color-ink-950);
+    background: var(--gradient-neon);
+    border: 1px solid transparent;
+    font-weight: 600;
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--color-neon-cyan) 35%, transparent),
+      0 8px 26px -10px color-mix(in oklab, var(--color-neon-violet) 62%, transparent);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--color-neon-cyan) 55%, transparent),
+      0 14px 40px -12px color-mix(in oklab, var(--color-neon-violet) 85%, transparent),
+      0 0 30px -6px color-mix(in oklab, var(--color-neon-cyan) 45%, transparent);
+  }
+
+  .btn-ghost {
+    color: var(--color-fog-200);
+    background: color-mix(in oklab, var(--color-ink-800) 70%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-ink-500) 80%, transparent);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    transform: translateY(-2px);
+    color: var(--color-fog-50);
+    border-color: color-mix(in oklab, var(--color-neon-cyan) 60%, transparent);
+    box-shadow: 0 10px 34px -16px color-mix(in oklab, var(--color-neon-cyan) 70%, transparent);
+  }
+
+  .btn-danger {
+    color: #fecdd3;
+    background: color-mix(in oklab, #f43f5e 16%, transparent);
+    border: 1px solid color-mix(in oklab, #f43f5e 42%, transparent);
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    color: #fff1f2;
+    background: color-mix(in oklab, #f43f5e 28%, transparent);
+    box-shadow: 0 10px 30px -14px color-mix(in oklab, #f43f5e 75%, transparent);
+  }
+
+  /* --- Chips ------------------------------------------------------------ */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--color-fog-200);
+    background: color-mix(in oklab, var(--color-ink-700) 75%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-ink-500) 70%, transparent);
+    transition:
+      color 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .chip-interactive:hover {
+    transform: translateY(-1px);
+    color: var(--color-fog-50);
+    border-color: color-mix(in oklab, var(--color-neon-cyan) 65%, transparent);
+    box-shadow: 0 0 18px -6px color-mix(in oklab, var(--color-neon-cyan) 65%, transparent);
+  }
+
+  /* --- Form controls ---------------------------------------------------- */
+  .field {
+    width: 100%;
+    border-radius: 0.7rem;
+    background: color-mix(in oklab, var(--color-ink-900) 85%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-ink-600) 90%, transparent);
+    padding: 0.62rem 0.85rem;
+    font-size: 0.925rem;
+    color: var(--color-fog-50);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  .field::placeholder {
+    color: var(--color-fog-500);
+  }
+
+  .field:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--color-ink-500) 95%, transparent);
+  }
+
+  .field:focus {
+    outline: none;
+    background: color-mix(in oklab, var(--color-ink-850) 92%, transparent);
+    border-color: color-mix(in oklab, var(--color-neon-cyan) 70%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-neon-cyan) 18%, transparent);
+  }
+
+  .field-error {
+    border-color: color-mix(in oklab, #f43f5e 70%, transparent);
+  }
+
+  .field-error:focus {
+    border-color: color-mix(in oklab, #f43f5e 85%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, #f43f5e 20%, transparent);
+  }
+
+  .field:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--color-fog-400);
+    margin-bottom: 0.4rem;
+  }
+
+  /* --- Section scaffolding ---------------------------------------------- */
+  .section {
+    position: relative;
+    /* Matches html { scroll-padding-top } so anchors land cleanly. */
+    scroll-margin-top: var(--header-height);
+    padding-block: clamp(4.5rem, 10vw, 8rem);
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 78rem;
+    margin-inline: auto;
+    /* 16px minimum side gutter on phones, per the brief. */
+    padding-inline: clamp(1rem, 4vw, 2.5rem);
+  }
+
+  /* --- Sanitised markdown body (project detail pages) ------------------- */
+  /*
+   * Scoped styles for the HTML produced by lib/markdown.ts. Written by hand
+   * rather than pulled in via a typography plugin, so only the handful of tags
+   * on the sanitiser's allow-list are styled - anything else cannot appear.
+   */
+  .prose-neon {
+    font-size: 1.01rem;
+    line-height: 1.78;
+    color: var(--color-fog-300);
+  }
+
+  .prose-neon > * + * {
+    margin-top: 1.1em;
+  }
+
+  .prose-neon h2 {
+    margin-top: 2.1em;
+    font-size: 1.45rem;
+  }
+
+  .prose-neon h3 {
+    margin-top: 1.8em;
+    font-size: 1.18rem;
+  }
+
+  .prose-neon h4 {
+    margin-top: 1.6em;
+    font-size: 1.03rem;
+    color: var(--color-fog-200);
+  }
+
+  .prose-neon strong {
+    font-weight: 600;
+    color: var(--color-fog-50);
+  }
+
+  .prose-neon a {
+    color: var(--color-neon-cyan);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--color-neon-cyan) 40%, transparent);
+    text-underline-offset: 3px;
+    transition: color 0.2s ease;
+  }
+
+  .prose-neon a:hover {
+    color: var(--color-fog-50);
+    text-decoration-color: currentColor;
+  }
+
+  .prose-neon ul,
+  .prose-neon ol {
+    padding-left: 1.35rem;
+  }
+
+  .prose-neon ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .prose-neon ul > li {
+    position: relative;
+    padding-left: 1.3rem;
+  }
+
+  .prose-neon ul > li::before {
+    content: '';
+    position: absolute;
+    top: 0.8em;
+    left: 0.25rem;
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--color-neon-cyan) 80%, transparent);
+  }
+
+  .prose-neon ol {
+    list-style: decimal;
+  }
+
+  .prose-neon ol > li::marker {
+    color: var(--color-neon-violet);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prose-neon li + li {
+    margin-top: 0.42em;
+  }
+
+  .prose-neon code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    padding: 0.14em 0.42em;
+    border-radius: 0.35rem;
+    color: var(--color-neon-cyan);
+    background: color-mix(in oklab, var(--color-ink-800) 85%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-ink-600) 70%, transparent);
+  }
+
+  .prose-neon pre {
+    padding: 1.05rem 1.15rem;
+    border-radius: 0.85rem;
+    background: color-mix(in oklab, var(--color-ink-900) 92%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-ink-600) 80%, transparent);
+    /* The only place overflow is clamped: a long code line should scroll
+       inside its own box rather than widen the page. Nothing here glows. */
+    overflow-x: auto;
+  }
+
+  .prose-neon pre code {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-fog-200);
+    font-size: 0.85rem;
+    line-height: 1.65;
+  }
+
+  .prose-neon blockquote {
+    padding: 0.25rem 0 0.25rem 1.1rem;
+    border-left: 2px solid color-mix(in oklab, var(--color-neon-violet) 65%, transparent);
+    color: var(--color-fog-400);
+    font-style: italic;
+  }
+
+  .prose-neon hr {
+    border: 0;
+    height: 1px;
+    margin-block: 2.2em;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--color-ink-500) 90%, transparent),
+      transparent
+    );
+  }
+}
+
+/* ===========================================================================
+   Utilities
+   =========================================================================== */
+
+@utility text-gradient {
+  background: var(--gradient-neon);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  /* A gradient-clipped heading with a tight line box loses its descenders;
+     the extra padding keeps the 'g' and 'y' intact. */
+  padding-block: 0.06em;
+}
+
+@utility text-glow {
+  text-shadow:
+    0 0 22px color-mix(in oklab, var(--color-neon-cyan) 32%, transparent),
+    0 0 48px color-mix(in oklab, var(--color-neon-violet) 22%, transparent);
+}
+
+/* A grid overlay that fades out toward the edges. */
+@utility bg-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--color-ink-600) 42%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-ink-600) 42%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 64px 64px;
+}
+
+/* Escape hatch for anywhere a glow needs to break out of a container. */
+@utility no-clip {
+  overflow: visible;
+}
+
+/* ===========================================================================
+   Reduced motion
+   ===========================================================================
+   Everything decorative stops. Framer Motion is handled separately through
+   `useReducedMotion`, but this covers the CSS-driven animation as well so the
+   two can never disagree.
+   =========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
