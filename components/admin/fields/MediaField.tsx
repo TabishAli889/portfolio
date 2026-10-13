@@ -136,7 +136,17 @@ export function MediaField({
 
       setBrokenPreview(false)
       onChange(secureUrl)
-      toast.success(kind === 'pdf' ? 'PDF uploaded.' : 'Image uploaded.')
+
+      /**
+       * The wording matters. The file is now on Cloudinary, but the document
+       * in MongoDB still has the old value - `onChange` only updates the form.
+       * A bare "Image uploaded." reads as "done", so it is genuinely easy to
+       * navigate away and lose the upload. Say what is still required.
+       */
+      toast.success(kind === 'pdf' ? 'PDF uploaded' : 'Image uploaded', {
+        description: 'Click "Save changes" to apply it to the site.',
+        duration: 6000,
+      })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Upload failed.')
     } finally {

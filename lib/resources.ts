@@ -203,7 +203,15 @@ export const RESOURCES: Record<ResourceKey, ResourceConfig> = {
         rows: 3,
         help: 'The snippet under your title in search results. Aim for 150-160 characters.',
       },
-      { name: 'resumeUrl', label: 'Resume PDF', type: 'pdf' },
+      {
+        name: 'resumeUrl',
+        label: 'Resume PDF',
+        type: 'pdf',
+        help:
+          'If the download returns "deny or ACL failure", enable ' +
+          'Settings > Security > "Allow delivery of PDF and ZIP files" in ' +
+          'Cloudinary - new accounts block PDF delivery by default.',
+      },
       { name: 'resumeFileName', label: 'Resume download filename', type: 'text', half: true },
       { name: 'email', label: 'Public email', type: 'email', half: true },
       { name: 'location', label: 'Location', type: 'text', half: true },

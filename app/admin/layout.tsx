@@ -1,6 +1,8 @@
+import { Suspense } from 'react'
 import { getAdminSession } from '@/lib/auth-guard'
 import { countUnreadMessages } from '@/lib/admin-data'
 import { AdminShell } from '@/components/admin/AdminShell'
+import { AdminSkeleton } from '@/components/admin/AdminSkeleton'
 
 export const metadata = {
   title: 'Content studio',
@@ -9,15 +11,31 @@ export const metadata = {
 }
 
 /**
- * `instant = false` tells Next.js not to expect an instantly-navigable static
- * shell here. Every admin screen reads the session at request time, which by
- * definition cannot be prerendered - so this opts the whole segment out of
- * instant-navigation validation rather than wrapping each page in Suspense,
- * for a dashboard where a server round trip is perfectly acceptable.
+ * This layout function is deliberately **synchronous**.
+ *
+ * With `cacheComponents` enabled, awaiting the session at a layout's top level
+ * is an error: it holds the entire segment - `{children}` included - behind a
+ * request-time read, so Next.js has no static shell to prerender. That is what
+ * produced "Next.js encountered the unstable value `new Date()`" and then
+ * `blocking-prerender-dynamic` pointing at `getAdminSession`.
+ *
+ * The documented fix is to push the request-time read into a component inside
+ * a `<Suspense>` boundary, which is what `<AdminGuard>` below is. The skeleton
+ * is the static shell; the real dashboard streams in once the session
+ * resolves. Pages nested under here render as `children` of the guard, so they
+ * sit inside the same boundary and their own session checks are covered too.
  */
 export const instant = false
 
-export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
+export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
+  return (
+    <Suspense fallback={<AdminSkeleton />}>
+      <AdminGuard>{children}</AdminGuard>
+    </Suspense>
+  )
+}
+
+async function AdminGuard({ children }: { children: React.ReactNode }) {
   const session = await getAdminSession()
 
   /**

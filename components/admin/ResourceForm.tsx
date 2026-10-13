@@ -292,7 +292,13 @@ export function ResourceForm({
         </button>
 
         {isDirty && !isPending && (
-          <span className="text-xs text-amber-300/80">Unsaved changes</span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-amber-300">
+            <span
+              aria-hidden
+              className="size-1.5 animate-pulse rounded-full bg-amber-300 shadow-[0_0_8px_1px_rgba(252,211,77,0.7)]"
+            />
+            Unsaved changes
+          </span>
         )}
 
         <div className="ml-auto flex items-center gap-2">

@@ -631,6 +631,24 @@ host. Those render with `unoptimized`, which serves the URL as-is and skips
 both the optimiser and the host check - so pasted URLs keep working without
 allowlisting the internet. See `isOptimizable` in `lib/images.ts`.
 
+**The resume PDF link returns `{"error":{"code":401,"message":"deny or ACL
+failure"}}`.**
+Cloudinary blocks public delivery of PDF and ZIP files by default on new
+accounts - the file uploaded fine, it just will not be served. Enable it in the
+console under **Settings > Security**, at the bottom: **"Allow delivery of PDF
+and ZIP files"**. The old URL may stay blocked briefly while Cloudinary's CDN
+cache expires.
+
+Note the image/PDF asymmetry: images deliver fine out of the box, so this only
+ever shows up on the resume.
+
+**An uploaded image does not appear on the site.**
+Uploading and saving are two separate steps. The upload puts the file on
+Cloudinary and fills the form field; the document in MongoDB is only written
+when you press **Save changes**. The upload toast says so, and the action bar
+shows "Unsaved changes" until you do. If the field is empty in the admin after
+a reload, the save never happened.
+
 **The Next.js logo sits in the bottom-left corner.**
 That is the Next.js dev indicator, which only renders under `npm run dev` and
 never in a production build. It is switched off via `devIndicators: false` in
