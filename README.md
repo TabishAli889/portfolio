@@ -168,6 +168,10 @@ Notes:
 - The email's `From` is always your own address - Gmail will not let you send as
   someone else. The visitor's address goes in `Reply-To`, so hitting reply in
   your mail client answers *them*.
+- Because `From` is your own account, set `CONTACT_TO_EMAIL` to a **different**
+  address if you can. Gmail files messages its own account sent under "Sent" /
+  "All Mail" instead of the Inbox, which makes a perfectly delivered
+  notification look missing.
 - **If the email fails, the message is not lost.** The contact route writes the
   message to MongoDB *before* attempting delivery, records the SMTP error on the
   document, and still shows the visitor a success state. The admin inbox flags
@@ -425,6 +429,44 @@ Also:
   uses a labelled `role="group"` because it has no single input to point at.
 - The cursor glow only mounts for a fine pointer and never for reduced motion.
 
+### Scroll performance
+
+The first version of this theme looked right but scrolled badly. What was wrong
+and what fixed it, since all four are easy to reintroduce:
+
+1. **`backdrop-filter` on every card.** `.glass` is used ~40 times on the home
+   page, and a backdrop filter makes the compositor re-sample and re-blur that
+   element's backdrop on every frame while scrolling. This was by far the
+   biggest cost. `.glass` now uses a near-opaque gradient instead; real
+   backdrop blur survives as `.glass-blur`, used only by the fixed header, the
+   mobile menu sheet and the admin sidebar - a handful of permanently promoted
+   layers where content genuinely scrolls underneath.
+2. **`scale()` on heavily blurred layers.** The aurora blobs animated
+   `translate3d` *and* `scale`. Scaling a blurred layer forces the blur to be
+   re-rasterized every frame; translating one does not. The keyframes are
+   translate-only now, and the blur radii came down from 90-110px to 56-64px.
+3. **Animating layout and paint properties.** The skill bars animated `width`
+   from 0, which triggers a layout pass per frame - with 16 bars entering the
+   viewport together, that stalled the scroll. They are now sized to their
+   final width and revealed with `scaleX` from a left origin. The "current
+   role" timeline node animated `box-shadow`, repainting every frame; it is now
+   a pseudo-element ring animating `transform` and `opacity`.
+4. **Blend modes and per-event React renders.** `mix-blend-mode` forces the
+   whole stacking context to be re-composited each frame, so it is gone from
+   the film grain and the cursor glow. `ProjectCard` used to call `setState`
+   twice per `pointermove`, re-rendering the card on every mouse movement; the
+   tilt and spotlight are driven by motion values now, which write straight to
+   the DOM without a React render.
+
+The rule of thumb that came out of it: animate only `transform` and `opacity`,
+and treat `backdrop-filter`, `mix-blend-mode` and animated `width`/`box-shadow`
+as things you can afford once or twice on a page, not forty times.
+
+Note that `content-visibility: auto` is **not** used to skip offscreen
+sections, tempting though it is. It implies `contain: paint`, which would make
+every section a clipping ancestor and cut the neon glows off - the exact bug
+described next.
+
 ### A note on the glow clipping problem
 
 The brief flagged that neon glows got clipped in an earlier project. Three rules
@@ -519,9 +561,34 @@ Verification is not enabled on the Google account. App Passwords do not exist
 until 2FA is on.
 
 **Contact form succeeds but no email arrives.**
-Check the admin inbox: the message will be there flagged "Email not sent" with
-the SMTP error recorded. Then run `npm run test:mail` to debug delivery
-separately. Also check the spam folder on the first send.
+First check the admin inbox. If the message is there *without* an "Email not
+sent" flag, then Gmail accepted it and the problem is where it landed, not
+whether it sent.
+
+The usual cause is `CONTACT_TO_EMAIL` being the same address as `GMAIL_USER`.
+Gmail recognises a message its own account sent and files it under "Sent" /
+"All Mail" rather than the Inbox, so it looks like nothing arrived. Either
+point `CONTACT_TO_EMAIL` at a different address, or search your mail for
+`subject:"Portfolio message from"`. Check spam on the first send too.
+
+If the message *is* flagged "Email not sent", the SMTP error is recorded on it;
+run `npm run test:mail` to debug authentication separately.
+
+**Cloudinary upload fails: "Request forbidden due to missing permissions
+(actions=[\"create\"])".**
+The API key authenticates but its role is not allowed to upload. This is a
+Cloudinary account setting, not a code problem - the same request fails
+identically with or without a folder, and an actually-invalid signature would
+report "Invalid Signature" instead. In the Cloudinary console open
+**Settings > API Keys**, then either use the account-level key or grant the
+existing key upload (create) permission, and update `CLOUDINARY_API_KEY` /
+`CLOUDINARY_API_SECRET`. You can confirm which permissions a key has by
+calling the Admin API: `/usage` needs `read`, uploading needs `create`.
+
+**The Next.js logo sits in the bottom-left corner.**
+That is the Next.js dev indicator, which only renders under `npm run dev` and
+never in a production build. It is switched off via `devIndicators: false` in
+`next.config.ts`; changes to that file need a dev-server restart.
 
 **Atlas connection times out from Vercel.**
 Network Access does not allow Vercel's IPs. Add `0.0.0.0/0`.

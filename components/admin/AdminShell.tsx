@@ -116,7 +116,7 @@ export function AdminShell({
   return (
     <div className="flex min-h-dvh bg-ink-950">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r border-ink-700/80 bg-ink-900/70 backdrop-blur-xl lg:block">
+      <aside className="glass-blur sticky top-0 hidden h-dvh w-64 shrink-0 border-r border-ink-700/80 bg-ink-900/70 lg:block">
         <div className="flex h-16 items-center gap-2.5 border-b border-ink-700/80 px-5">
           <span className="size-2.5 rounded-full bg-neon-cyan shadow-[0_0_12px_2px_rgba(34,211,238,0.8)]" />
           <span className="font-display text-sm font-semibold tracking-wide text-fog-50">
@@ -133,7 +133,7 @@ export function AdminShell({
             type="button"
             aria-label="Close menu"
             onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink-950/80"
           />
           <aside className="absolute inset-y-0 left-0 flex w-72 flex-col border-r border-ink-700 bg-ink-900">
             <div className="flex h-16 items-center justify-between border-b border-ink-700 px-5">
@@ -155,7 +155,7 @@ export function AdminShell({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-ink-700/80 bg-ink-950/85 px-4 backdrop-blur-xl lg:hidden">
+        <header className="glass-blur sticky top-0 z-40 flex h-16 items-center gap-3 border-b border-ink-700/80 bg-ink-950/85 px-4 lg:hidden">
           <button
             type="button"
             onClick={() => setOpen(true)}

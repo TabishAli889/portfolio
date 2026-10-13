@@ -88,7 +88,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           toastOptions={{
             classNames: {
               toast:
-                'glass !bg-ink-850/95 !border-ink-600 !text-fog-100 !backdrop-blur-xl !shadow-[0_18px_50px_-24px_rgba(34,211,238,0.5)]',
+                'glass !bg-ink-850/95 !border-ink-600 !text-fog-100 !shadow-[0_18px_50px_-24px_rgba(34,211,238,0.5)]',
               title: '!text-fog-50 !font-medium',
               description: '!text-fog-400',
               actionButton: '!bg-neon-cyan !text-ink-950',

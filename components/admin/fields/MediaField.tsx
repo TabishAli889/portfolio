@@ -86,7 +86,24 @@ export function MediaField({
         const detail = (await uploadResponse.json().catch(() => ({}))) as {
           error?: { message?: string }
         }
-        throw new Error(detail.error?.message ?? 'Cloudinary rejected the upload.')
+        const raw = detail.error?.message ?? ''
+
+        /**
+         * Cloudinary answers an API key that authenticates but lacks upload
+         * rights with "Request forbidden due to missing permissions
+         * (actions=[\"create\"])", which gives no clue where to look. Translate
+         * it, because the fix is in the Cloudinary console, not in this code.
+         */
+        if (uploadResponse.status === 403 && /missing permissions/i.test(raw)) {
+          throw new Error(
+            'Cloudinary rejected the key: it is authenticated but not allowed to upload. ' +
+              'In the Cloudinary console open Settings > API Keys and use a key whose role ' +
+              'permits uploading (the account-level key does), then update CLOUDINARY_API_KEY ' +
+              'and CLOUDINARY_API_SECRET.',
+          )
+        }
+
+        throw new Error(raw || 'Cloudinary rejected the upload.')
       }
 
       const { secure_url: secureUrl } = (await uploadResponse.json()) as { secure_url: string }

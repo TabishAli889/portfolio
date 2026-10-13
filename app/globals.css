@@ -50,16 +50,24 @@
   --animate-marquee: marquee 38s linear infinite;
 }
 
+/*
+ * Translate only - deliberately no `scale`.
+ *
+ * These blobs carry a very large blur. Scaling a blurred layer forces the
+ * compositor to re-rasterize that blur on every frame, which was a major
+ * source of scroll jank. A pure translate is handled entirely on the
+ * compositor thread: the layer is rasterized once and then just moved.
+ */
 @keyframes aurora {
   0%,
   100% {
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0);
   }
   33% {
-    transform: translate3d(6%, -4%, 0) scale(1.12);
+    transform: translate3d(7%, -5%, 0);
   }
   66% {
-    transform: translate3d(-5%, 5%, 0) scale(0.94);
+    transform: translate3d(-6%, 6%, 0);
   }
 }
 
@@ -92,15 +100,23 @@
   }
 }
 
+/*
+ * Driven by transform + opacity rather than an animated `box-shadow`.
+ * Animating box-shadow repaints the element every frame on the main thread;
+ * scaling a ring pseudo-element stays on the compositor.
+ */
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-neon-cyan) 55%, transparent);
+    transform: scale(0.72);
+    opacity: 0.55;
   }
   70% {
-    box-shadow: 0 0 0 14px transparent;
+    transform: scale(1.75);
+    opacity: 0;
   }
   100% {
-    box-shadow: 0 0 0 0 transparent;
+    transform: scale(1.75);
+    opacity: 0;
   }
 }
 
@@ -199,18 +215,40 @@
 
 @layer components {
   /* --- Glass card ------------------------------------------------------- */
+  /*
+   * NOTE: no `backdrop-filter` here, deliberately.
+   *
+   * There are ~40 of these on the home page, and `backdrop-filter` makes the
+   * compositor re-sample and re-blur each element's backdrop on every frame
+   * while scrolling. That was the single largest cause of scroll jank. The
+   * backdrop here is an out-of-flow aurora layer, not busy content, so a
+   * near-opaque gradient is visually almost indistinguishable and costs
+   * nothing to scroll past.
+   *
+   * Real backdrop blur is kept for `.glass-blur` below, which is used only by
+   * the handful of fixed chrome elements where content genuinely scrolls
+   * underneath.
+   */
   .glass {
     position: relative;
     background: linear-gradient(
       160deg,
-      color-mix(in oklab, var(--color-ink-800) 88%, transparent),
-      color-mix(in oklab, var(--color-ink-900) 94%, transparent)
+      color-mix(in oklab, var(--color-ink-800) 94%, transparent),
+      color-mix(in oklab, var(--color-ink-900) 97%, transparent)
     );
     border: 1px solid color-mix(in oklab, var(--color-ink-600) 85%, transparent);
-    backdrop-filter: blur(14px) saturate(130%);
     border-radius: 1rem;
     /* NOTE: no `overflow: hidden` here on purpose. Child glows and the
        gradient border below both paint outside the box. */
+  }
+
+  /*
+   * Fixed chrome that content scrolls beneath: the site header, the mobile
+   * menu sheet and the admin sidebar. Each is a single, permanently promoted
+   * layer, so the blur is rasterized once rather than per card.
+   */
+  .glass-blur {
+    backdrop-filter: blur(14px) saturate(130%);
   }
 
   /* Gradient hairline that lights up on hover, drawn with a mask so it stays
@@ -238,6 +276,24 @@
   .glass-ring:hover::after,
   .glass-ring:focus-within::after {
     opacity: 0.9;
+  }
+
+  /*
+   * Expanding ring for the "current role" timeline node.
+   *
+   * The ring is a pseudo-element that scales and fades, so the animation runs
+   * on the compositor. Animating the node's own `box-shadow` instead would
+   * repaint it on the main thread every frame, all the way down the page.
+   */
+  .pulse-ring::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    border: 1px solid var(--color-neon-cyan);
+    animation: var(--animate-pulse-ring);
+    pointer-events: none;
+    will-change: transform, opacity;
   }
 
   /* --- Glow halo -------------------------------------------------------- */

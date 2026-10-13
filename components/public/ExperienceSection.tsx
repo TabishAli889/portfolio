@@ -59,7 +59,7 @@ export function ExperienceSection({ experience }: { experience: Experience[] }) 
                 <span
                   aria-hidden
                   className={`absolute top-1.5 left-0 flex size-[23px] items-center justify-center rounded-full border border-ink-600 bg-ink-900 sm:size-[31px] ${
-                    item.current && !reduceMotion ? 'animate-pulse-ring' : ''
+                    item.current && !reduceMotion ? 'pulse-ring' : ''
                   }`}
                 >
                   <span

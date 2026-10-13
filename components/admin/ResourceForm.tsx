@@ -269,7 +269,7 @@ export function ResourceForm({
       </div>
 
       {/* Sticky action bar, so Save is always reachable in a long form. */}
-      <div className="sticky bottom-4 z-20 flex flex-wrap items-center gap-3 rounded-2xl border border-ink-700 bg-ink-900/92 px-4 py-3 backdrop-blur-xl">
+      <div className="glass-blur sticky bottom-4 z-20 flex flex-wrap items-center gap-3 rounded-2xl border border-ink-700 bg-ink-900/92 px-4 py-3">
         <button type="submit" disabled={isPending} className="btn btn-primary">
           {isPending ? (
             <>

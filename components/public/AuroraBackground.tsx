@@ -18,10 +18,16 @@ export function AuroraBackground({ withGrid = true }: { withGrid?: boolean }) {
       aria-hidden
       className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-ink-950"
     >
-      {/* Aurora blobs. Sized in vmax so they stay oversized on any viewport. */}
-      <div className="absolute -top-[22vmax] -left-[12vmax] size-[58vmax] animate-aurora rounded-full bg-neon-violet/22 blur-[100px] will-change-transform" />
-      <div className="absolute -top-[8vmax] -right-[16vmax] size-[46vmax] animate-aurora-slow rounded-full bg-neon-cyan/18 blur-[90px] will-change-transform" />
-      <div className="absolute -bottom-[26vmax] left-[18vmax] size-[52vmax] animate-aurora rounded-full bg-neon-magenta/14 blur-[110px] will-change-transform [animation-delay:-9s]" />
+      {/*
+        Aurora blobs. Sized in vmax so they stay oversized on any viewport.
+        The blur radii are kept moderate on purpose: blur cost scales with
+        both radius and layer area, and these layers are enormous. Combined
+        with the translate-only keyframes, each blob is rasterized once and
+        then simply moved by the compositor.
+      */}
+      <div className="absolute -top-[20vmax] -left-[12vmax] size-[50vmax] animate-aurora rounded-full bg-neon-violet/25 blur-[64px] will-change-transform" />
+      <div className="absolute -top-[8vmax] -right-[14vmax] size-[40vmax] animate-aurora-slow rounded-full bg-neon-cyan/20 blur-[56px] will-change-transform" />
+      <div className="absolute -bottom-[24vmax] left-[16vmax] size-[44vmax] animate-aurora rounded-full bg-neon-magenta/16 blur-[64px] will-change-transform [animation-delay:-9s]" />
 
       {/* Grid, faded out towards the edges with a radial mask. */}
       {withGrid && (
@@ -35,9 +41,14 @@ export function AuroraBackground({ withGrid = true }: { withGrid?: boolean }) {
         />
       )}
 
-      {/* Film grain. An inline SVG turbulence avoids shipping a texture file. */}
+      {/*
+        Film grain. An inline SVG turbulence avoids shipping a texture file.
+        No `mix-blend-mode`: a blend mode forces the whole stacking context to
+        be composited together on every frame, which is exactly what we are
+        trying to avoid. Plain opacity reads the same over a dark background.
+      */}
       <div
-        className="absolute inset-0 opacity-[0.045] mix-blend-soft-light"
+        className="absolute inset-0 opacity-[0.035]"
         style={{
           backgroundImage:
             "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E\")",

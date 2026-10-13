@@ -1,9 +1,15 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion, useReducedMotion } from 'framer-motion'
+import {
+  motion,
+  useMotionTemplate,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+} from 'framer-motion'
 import { ArrowRight, Globe, Star } from 'lucide-react'
 import type { Project } from '@/lib/content-types'
 import { GithubIcon } from '@/components/ui/BrandIcons'
@@ -15,6 +21,12 @@ import { GithubIcon } from '@/components/ui/BrandIcons'
  * card itself. Note what is NOT here: no `overflow-hidden` on the card. The
  * cover image is clipped by its own inner wrapper instead, so the card's halo
  * and gradient ring can still paint outside the card box.
+ *
+ * The pointer position is held in motion values, not React state. Driving it
+ * through `useState` meant two setState calls per `pointermove`, so the whole
+ * card re-rendered on every mouse movement - and with several cards on screen
+ * that was enough to make the page feel heavy. Motion values write straight to
+ * the DOM node and never re-render the component.
  */
 export function ProjectCard({
   project,
@@ -27,8 +39,14 @@ export function ProjectCard({
 }) {
   const reduceMotion = useReducedMotion()
   const cardRef = useRef<HTMLDivElement>(null)
-  const [tilt, setTilt] = useState({ x: 0, y: 0 })
-  const [spot, setSpot] = useState<{ x: number; y: number } | null>(null)
+
+  const rotateX = useSpring(0, { stiffness: 220, damping: 24 })
+  const rotateY = useSpring(0, { stiffness: 220, damping: 24 })
+  const spotX = useMotionValue(50)
+  const spotY = useMotionValue(50)
+  const spotOpacity = useMotionValue(0)
+
+  const spotlight = useMotionTemplate`radial-gradient(320px circle at ${spotX}% ${spotY}%, color-mix(in oklab, var(--color-neon-cyan) 13%, transparent), transparent 62%)`
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
     // Touch and pen get no tilt: it fights with scrolling.
@@ -40,13 +58,17 @@ export function ProjectCard({
     const px = (event.clientX - rect.left) / rect.width
     const py = (event.clientY - rect.top) / rect.height
 
-    setTilt({ x: (py - 0.5) * -7, y: (px - 0.5) * 9 })
-    setSpot({ x: px * 100, y: py * 100 })
+    rotateX.set((py - 0.5) * -7)
+    rotateY.set((px - 0.5) * 9)
+    spotX.set(px * 100)
+    spotY.set(py * 100)
+    spotOpacity.set(0.7)
   }
 
   function reset() {
-    setTilt({ x: 0, y: 0 })
-    setSpot(null)
+    rotateX.set(0)
+    rotateY.set(0)
+    spotOpacity.set(0)
   }
 
   return (
@@ -54,23 +76,22 @@ export function ProjectCard({
       ref={cardRef}
       onPointerMove={onPointerMove}
       onPointerLeave={reset}
-      animate={{ rotateX: tilt.x, rotateY: tilt.y }}
-      transition={{ type: 'spring', stiffness: 220, damping: 24 }}
-      style={{ transformPerspective: 1000, transformStyle: 'preserve-3d' }}
+      style={{
+        rotateX,
+        rotateY,
+        transformPerspective: 1000,
+        transformStyle: 'preserve-3d',
+      }}
       className={`glass glass-ring glow-halo group relative flex h-full flex-col ${
         project.featured ? 'glow-halo-violet' : ''
       }`}
     >
       {/* Cursor spotlight. Sits above the fill, below the content. */}
-      {spot && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-70 transition-opacity"
-          style={{
-            background: `radial-gradient(320px circle at ${spot.x}% ${spot.y}%, color-mix(in oklab, var(--color-neon-cyan) 13%, transparent), transparent 62%)`,
-          }}
-        />
-      )}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[inherit]"
+        style={{ background: spotlight, opacity: spotOpacity }}
+      />
 
       {imageUrl && (
         <div className="relative m-2 mb-0 aspect-16/9 overflow-hidden rounded-xl bg-ink-800">

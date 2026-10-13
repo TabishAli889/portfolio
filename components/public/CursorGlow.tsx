@@ -14,6 +14,10 @@ import { motion, useMotionValue, useReducedMotion, useSpring } from 'framer-moti
  *  - it is `pointer-events-none` and `fixed`, so it cannot intercept clicks or
  *    become a scroll container.
  *
+ * It also carries no `mix-blend-mode`. A blend mode would force the entire
+ * stacking context beneath it to be re-composited as the pointer moves, which
+ * is far too high a price for a decorative glow.
+ *
  * Position and opacity are motion values rather than React state, so moving
  * the mouse never triggers a React render - and there is no `setState` inside
  * the effect to cause a cascading re-render on mount.
@@ -56,7 +60,7 @@ export function CursorGlow() {
   return (
     <motion.div
       aria-hidden
-      className="pointer-events-none fixed top-0 left-0 z-30 size-[520px] rounded-full mix-blend-screen"
+      className="pointer-events-none fixed top-0 left-0 z-30 size-[380px] rounded-full"
       style={{
         x: springX,
         y: springY,
@@ -65,7 +69,7 @@ export function CursorGlow() {
         translateY: '-50%',
         background:
           'radial-gradient(circle, color-mix(in oklab, var(--color-neon-cyan) 12%, transparent) 0%, transparent 58%)',
-        filter: 'blur(42px)',
+        filter: 'blur(28px)',
       }}
     />
   )

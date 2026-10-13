@@ -81,13 +81,20 @@ function SkillBar({ name, level, icon }: { name: string; level: number; icon?: s
         aria-valuemax={100}
         aria-label={`${name} proficiency`}
       >
+        {/*
+          The fill is sized to its final width and revealed with `scaleX`,
+          rather than animating `width` from 0.
+          Animating width forces a layout pass on every frame - and with 16
+          bars coming into view together, that was a visible stall mid-scroll.
+          A scaleX transform runs on the compositor instead.
+        */}
         <motion.div
-          className="h-full rounded-full bg-[linear-gradient(90deg,var(--color-neon-cyan),var(--color-neon-violet))]"
-          initial={reduceMotion ? false : { width: 0 }}
-          whileInView={{ width: `${clamped}%` }}
+          className="h-full origin-left rounded-full bg-[linear-gradient(90deg,var(--color-neon-cyan),var(--color-neon-violet))]"
+          style={{ width: `${clamped}%` }}
+          initial={reduceMotion ? false : { scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
-          style={reduceMotion ? { width: `${clamped}%` } : undefined}
         />
       </div>
     </div>

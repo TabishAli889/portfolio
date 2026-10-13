@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { motion, useReducedMotion, useScroll, useSpring } from 'framer-motion'
+import {
+  motion,
+  useMotionValueEvent,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+} from 'framer-motion'
 import { Download, Menu, X } from 'lucide-react'
 
 /**
@@ -28,8 +34,17 @@ export function SiteHeader({
   const [active, setActive] = useState<string>(sections[0]?.id ?? '')
   const [scrolled, setScrolled] = useState(false)
 
-  const { scrollYProgress } = useScroll()
+  const { scrollY, scrollYProgress } = useScroll()
   const progress = useSpring(scrollYProgress, { stiffness: 180, damping: 36, restDelta: 0.001 })
+
+  /**
+   * Piggybacks on the scroll listener Framer already owns for `useScroll`,
+   * rather than registering a second `window.scroll` handler of our own.
+   * `setScrolled` only ever changes state when the threshold is crossed.
+   */
+  useMotionValueEvent(scrollY, 'change', (value) => {
+    setScrolled(value > 12)
+  })
 
   // Active-section tracking.
   useEffect(() => {
@@ -57,14 +72,6 @@ export function SiteHeader({
     return () => observer.disconnect()
   }, [sections])
 
-  // Header background only once the page has moved.
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
   // Lock body scroll behind the mobile menu.
   useEffect(() => {
     if (!open) return
@@ -78,7 +85,7 @@ export function SiteHeader({
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 h-(--header-height) transition-colors duration-300 ${
-        scrolled ? 'border-b border-ink-700/70 bg-ink-950/80 backdrop-blur-xl' : ''
+        scrolled ? 'glass-blur border-b border-ink-700/70 bg-ink-950/80' : ''
       }`}
     >
       <div className="shell flex h-full items-center gap-6">
@@ -158,11 +165,11 @@ export function SiteHeader({
             type="button"
             aria-label="Close menu"
             onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-ink-950/85 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink-950/85"
           />
           <nav
             aria-label="Sections"
-            className="relative mx-4 mt-3 rounded-2xl border border-ink-700 bg-ink-900/95 p-2 backdrop-blur-xl"
+            className="glass-blur relative mx-4 mt-3 rounded-2xl border border-ink-700 bg-ink-900/95 p-2"
           >
             {sections.map((section) => (
               <a
