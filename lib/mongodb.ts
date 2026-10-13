@@ -39,16 +39,50 @@ export async function connectToDatabase(): Promise<Mongoose> {
         serverSelectionTimeoutMS: 10_000,
         socketTimeoutMS: 45_000,
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         // Clear the rejected promise so the next request can retry instead of
         // permanently caching the failure for the life of the container.
         cache.promise = null
-        throw error
+        throw explain(error)
       })
   }
 
   cache.conn = await cache.promise
   return cache.conn
+}
+
+/**
+ * Turns a server-selection failure into something actionable.
+ *
+ * The driver's own error is a ~40-line topology dump (`commonWireVersion: 0`,
+ * every seed host listed as unknown) that says nothing about the cause. In
+ * practice it is almost always one of three things, and none of them are code:
+ * the Atlas IP access list, a paused free-tier cluster, or wrong credentials.
+ *
+ * This matters most during `next build`, where the prerender reads the
+ * database: on Vercel the failure surfaced only as "Failed to collect page
+ * data" with the dump above it, which points at the wrong layer entirely.
+ */
+function explain(error: unknown): unknown {
+  const name = error instanceof Error ? error.name : ''
+  if (!/ServerSelection|Timeout/i.test(name)) return error
+
+  const wrapped = new Error(
+    'Could not reach MongoDB. The connection string was accepted and the host ' +
+      'resolved, but no server answered in time. Check, in this order:\n' +
+      '  1. Atlas > Network Access: the IP access list must contain 0.0.0.0/0. ' +
+      'Vercel builds and serverless functions do not have stable IPs, so an ' +
+      'allowlist holding only your home IP fails in production while working \n' +
+      '     locally.\n' +
+      '  2. Atlas > Clusters: a free-tier (M0) cluster auto-pauses after 60 days ' +
+      'idle and must be resumed by hand. /api/health plus the UptimeRobot setup ' +
+      'in the README exist to stop that happening.\n' +
+      '  3. The user, password and database name in MONGODB_URI. A password ' +
+      'containing @ : / ? # or % must be percent-encoded.',
+    { cause: error },
+  )
+  wrapped.name = 'MongoUnreachableError'
+  return wrapped
 }
 
 /** Trivial round-trip used by GET /api/health to keep Atlas awake. */

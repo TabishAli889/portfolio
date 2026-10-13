@@ -25,8 +25,29 @@ import { Reveal } from "@/components/public/Reveal";
  * from the admin refreshes it immediately.
  */
 export async function generateStaticParams() {
-  const slugs = await getProjectSlugs();
-  return slugs.map((slug) => ({ slug }));
+  /**
+   * A throw here fails the whole build with "Failed to collect page data",
+   * which is a confusing way to report that the database was unreachable. The
+   * list of slugs is only a prerender optimisation, so an empty list is a
+   * perfectly valid answer: every project still renders on demand on first
+   * request, and `getProjectBySlug` is tagged `projects`, so an admin save
+   * refreshes it exactly as it would a prerendered page.
+   *
+   * Deliberately NOT applied to the cached readers in lib/data.ts. Those run
+   * under `cacheLife('max')`, so swallowing an error there would cache an
+   * empty site permanently - far worse than a failed deploy.
+   */
+  try {
+    const slugs = await getProjectSlugs();
+    return slugs.map((slug) => ({ slug }));
+  } catch (error) {
+    console.error(
+      "[projects] Could not list project slugs, so none were prerendered. " +
+        "They will render on demand instead.",
+      error,
+    );
+    return [];
+  }
 }
 
 export async function generateMetadata({

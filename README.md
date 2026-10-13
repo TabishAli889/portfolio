@@ -552,6 +552,29 @@ Public pages are prerendered at build time, which reads the database. Set
 `MONGODB_URI` in your Vercel project settings (all three environments) and
 redeploy.
 
+**Deploy fails with "Failed to collect page data for /projects/[slug]", after a
+long object dump ending `commonWireVersion: 0`.**
+That dump is a `MongoServerSelectionError`: the connection string was fine and
+the hostname resolved, but Atlas never answered. The route is only where it
+surfaced first - it is not a problem with that page. In order of likelihood:
+
+1. **The Atlas IP access list.** Open Atlas > Network Access and confirm
+   `0.0.0.0/0` is listed. Vercel builds and serverless functions have no stable
+   outbound IP, so an allowlist containing only your home IP works locally and
+   fails on every deploy. This is by far the most common cause.
+2. **A paused cluster.** A free-tier M0 cluster auto-pauses after 60 days idle
+   and will not wake on its own. Resume it from Atlas > Clusters. The
+   `/api/health` endpoint and the UptimeRobot monitor above exist to prevent
+   this.
+3. **Credentials.** Re-check the user, password and database name in
+   `MONGODB_URI`. A password containing `@ : / ? # %` must be percent-encoded.
+
+The app now wraps this failure in a `MongoUnreachableError` that lists these
+three checks, so the deploy log says what to do instead of printing the raw
+topology. Note that a missing project slug list no longer fails the build -
+projects render on demand instead - but the home page genuinely cannot be
+prerendered without the database, so connectivity still has to be fixed.
+
 **Login redirects to the wrong host after deploying.**
 `AUTH_URL` still points at the old URL. Update it to your current domain.
 
