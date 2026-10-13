@@ -14,13 +14,39 @@ import { cloudinaryEnv } from './env'
  * reused to upload anywhere else.
  */
 
-export type UploadSignature = {
-  signature: string
-  timestamp: number
-  apiKey: string
-  cloudName: string
-  folder: string
-}
+/**
+ * Two upload modes are supported.
+ *
+ * `signed` is the default and the better one: the browser gets a short-lived
+ * signature and the API secret never leaves the server.
+ *
+ * `unsigned` exists because a signed upload depends on the API key carrying
+ * Cloudinary's `create` permission, and that is not always within reach - a
+ * newly generated key has to be activated, and some keys are issued with
+ * restricted roles. Such a key authenticates happily and then fails every
+ * upload with "Request forbidden due to missing permissions". An unsigned
+ * upload preset bypasses API keys entirely, so it is the reliable escape
+ * hatch. It is opt-in: set CLOUDINARY_UPLOAD_PRESET to switch.
+ *
+ * The trade-off is real and worth stating: an unsigned preset can be used by
+ * anyone who learns the cloud name and preset name, so restrict the preset in
+ * Cloudinary (folder, allowed formats, max file size) rather than leaving it
+ * open.
+ */
+export type UploadConfig =
+  | {
+      mode: 'signed'
+      cloudName: string
+      folder: string
+      apiKey: string
+      timestamp: number
+      signature: string
+    }
+  | {
+      mode: 'unsigned'
+      cloudName: string
+      preset: string
+    }
 
 /** Folders are fixed server-side so a signature cannot be aimed elsewhere. */
 export const UPLOAD_FOLDERS = {
@@ -30,14 +56,24 @@ export const UPLOAD_FOLDERS = {
 
 export type UploadKind = keyof typeof UPLOAD_FOLDERS
 
-export function createUploadSignature(kind: UploadKind): UploadSignature {
-  const { cloudName, apiKey, apiSecret } = cloudinaryEnv()
+export function createUploadConfig(kind: UploadKind): UploadConfig {
+  const { cloudName, apiKey, apiSecret, uploadPreset } = cloudinaryEnv()
+
+  if (uploadPreset) {
+    /**
+     * No `folder` is sent in unsigned mode. Cloudinary restricts which
+     * parameters an unsigned upload may carry, so the destination folder is
+     * configured on the preset itself - which also means it cannot be
+     * overridden by whoever calls the endpoint.
+     */
+    return { mode: 'unsigned', cloudName, preset: uploadPreset }
+  }
+
   const timestamp = Math.round(Date.now() / 1000)
   const folder = UPLOAD_FOLDERS[kind]
-
   const signature = cloudinary.utils.api_sign_request({ timestamp, folder }, apiSecret)
 
-  return { signature, timestamp, apiKey, cloudName, folder }
+  return { mode: 'signed', signature, timestamp, apiKey, cloudName, folder }
 }
 
 /**

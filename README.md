@@ -576,14 +576,44 @@ run `npm run test:mail` to debug authentication separately.
 
 **Cloudinary upload fails: "Request forbidden due to missing permissions
 (actions=[\"create\"])".**
-The API key authenticates but its role is not allowed to upload. This is a
-Cloudinary account setting, not a code problem - the same request fails
-identically with or without a folder, and an actually-invalid signature would
-report "Invalid Signature" instead. In the Cloudinary console open
-**Settings > API Keys**, then either use the account-level key or grant the
-existing key upload (create) permission, and update `CLOUDINARY_API_KEY` /
-`CLOUDINARY_API_SECRET`. You can confirm which permissions a key has by
-calling the Admin API: `/usage` needs `read`, uploading needs `create`.
+
+The API key authenticates but is not permitted to upload. This is an account
+setting, not a code problem. How to be sure, and how to fix it:
+
+*Confirming the diagnosis.* An unsigned upload sends no API key at all, so it
+isolates the key from everything else:
+
+```bash
+curl -F file=@any.png -F upload_preset=does_not_exist   https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload
+```
+
+`400 {"error":{"message":"Upload preset not found"}}` means the upload endpoint
+works for your account and the key is the problem. A `403` with "missing
+permissions" instead would mean the whole product environment is blocked. (A
+genuinely malformed signature reports `Invalid Signature`, which is a different
+failure again.)
+
+*Fix 1 - use a key that may upload.* Console > **Settings > API Keys**. Use the
+original key pair that came with the product environment. If you generated an
+additional key, it must be **activated** there before it can do anything; an
+inactive or restricted key authenticates and then refuses every upload.
+
+*Fix 2 - skip API keys for uploading.* Console > **Settings > Upload > Upload
+presets > Add upload preset**, set **Signing Mode = Unsigned**, give it a
+folder (e.g. `portfolio/images`), and restrict allowed formats and max file
+size. Then set:
+
+```ini
+CLOUDINARY_UPLOAD_PRESET="your_preset_name"
+```
+
+and restart the dev server. The admin switches to unsigned uploads
+automatically and ignores the API key. The trade-off: an unsigned preset can be
+used by anyone who learns your cloud name and preset name, so the restrictions
+you set on the preset are the security boundary. The folder is fixed on the
+preset, so it cannot be redirected by a caller.
+
+Signed uploads remain the default whenever `CLOUDINARY_UPLOAD_PRESET` is unset.
 
 **The Next.js logo sits in the bottom-left corner.**
 That is the Next.js dev indicator, which only renders under `npm run dev` and

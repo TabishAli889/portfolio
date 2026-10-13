@@ -79,10 +79,25 @@ export function authEnv() {
 }
 
 export function cloudinaryEnv() {
+  const uploadPreset = optional('CLOUDINARY_UPLOAD_PRESET')
+
+  // In unsigned mode only the cloud name and the preset are needed: no API
+  // key is involved, so requiring one would block the very configuration that
+  // exists to work around a key problem.
+  if (uploadPreset) {
+    return {
+      cloudName: required('CLOUDINARY_CLOUD_NAME'),
+      apiKey: optional('CLOUDINARY_API_KEY'),
+      apiSecret: optional('CLOUDINARY_API_SECRET'),
+      uploadPreset,
+    }
+  }
+
   return {
     cloudName: required('CLOUDINARY_CLOUD_NAME'),
     apiKey: required('CLOUDINARY_API_KEY'),
     apiSecret: required('CLOUDINARY_API_SECRET'),
+    uploadPreset: '',
   }
 }
 
@@ -102,10 +117,12 @@ export function hasMailConfig(): boolean {
 
 /** True when Cloudinary is configured; lets the admin hide the uploader. */
 export function hasCloudinaryConfig(): boolean {
+  if (!process.env.CLOUDINARY_CLOUD_NAME) return false
+
+  // Either an unsigned preset, or a full signing key pair.
   return Boolean(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET,
+    process.env.CLOUDINARY_UPLOAD_PRESET ||
+      (process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET),
   )
 }
 

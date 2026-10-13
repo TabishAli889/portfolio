@@ -13,6 +13,21 @@ import { toast } from 'sonner'
  * success the resulting secure_url is written into the form field.
  */
 
+/**
+ * Mirrors `UploadConfig` in lib/cloudinary.ts. Declared locally rather than
+ * imported because that module is `server-only`.
+ */
+type UploadConfig =
+  | {
+      mode: 'signed'
+      cloudName: string
+      folder: string
+      apiKey: string
+      timestamp: number
+      signature: string
+    }
+  | { mode: 'unsigned'; cloudName: string; preset: string }
+
 const MAX_BYTES = { image: 8 * 1024 * 1024, pdf: 12 * 1024 * 1024 }
 
 const ACCEPT = {
@@ -60,25 +75,25 @@ export function MediaField({
         throw new Error(body.error ?? 'Could not start the upload.')
       }
 
-      const { signature, timestamp, apiKey, cloudName, folder } = (await
-        signatureResponse.json()) as {
-        signature: string
-        timestamp: number
-        apiKey: string
-        cloudName: string
-        folder: string
-      }
+      const config = (await signatureResponse.json()) as UploadConfig
 
       const body = new FormData()
       body.append('file', file)
-      body.append('api_key', apiKey)
-      body.append('timestamp', String(timestamp))
-      body.append('signature', signature)
-      body.append('folder', folder)
+
+      if (config.mode === 'unsigned') {
+        // No API key and no signature: the preset authorises the upload and
+        // decides the destination folder.
+        body.append('upload_preset', config.preset)
+      } else {
+        body.append('api_key', config.apiKey)
+        body.append('timestamp', String(config.timestamp))
+        body.append('signature', config.signature)
+        body.append('folder', config.folder)
+      }
 
       // `auto` lets one endpoint handle both images and the resume PDF.
       const uploadResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+        `https://api.cloudinary.com/v1_1/${config.cloudName}/auto/upload`,
         { method: 'POST', body },
       )
 
@@ -96,10 +111,20 @@ export function MediaField({
          */
         if (uploadResponse.status === 403 && /missing permissions/i.test(raw)) {
           throw new Error(
-            'Cloudinary rejected the key: it is authenticated but not allowed to upload. ' +
-              'In the Cloudinary console open Settings > API Keys and use a key whose role ' +
-              'permits uploading (the account-level key does), then update CLOUDINARY_API_KEY ' +
-              'and CLOUDINARY_API_SECRET.',
+            'Cloudinary accepted the API key but will not let it upload. Two fixes: ' +
+              'in the Cloudinary console under Settings > API Keys, use the original key pair ' +
+              '(a newly generated key must be activated first) - or skip API keys entirely by ' +
+              'creating an unsigned upload preset and setting CLOUDINARY_UPLOAD_PRESET. ' +
+              'See the README section "Cloudinary upload fails".',
+          )
+        }
+
+        // Unsigned mode: the preset name is wrong, or it is not set to Unsigned.
+        if (/upload preset/i.test(raw)) {
+          throw new Error(
+            `Cloudinary could not use that upload preset: ${raw}. Check that ` +
+              'CLOUDINARY_UPLOAD_PRESET matches the preset name exactly and that its ' +
+              'signing mode is set to Unsigned.',
           )
         }
 
