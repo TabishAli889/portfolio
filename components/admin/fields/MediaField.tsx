@@ -2,7 +2,14 @@
 
 import { useId, useRef, useState } from 'react'
 import Image from 'next/image'
-import { FileText, ImageOff, Loader2, Trash2, Upload } from 'lucide-react'
+import {
+  AlertTriangle,
+  FileText,
+  ImageOff,
+  Loader2,
+  Trash2,
+  Upload,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { isOptimizable } from '@/lib/images'
 
@@ -43,6 +50,7 @@ export function MediaField({
   onChange,
   disabled,
   describedBy,
+  savedSignal = 0,
 }: {
   /** Applied to the URL input, so the form's <label for> resolves to it. */
   id?: string
@@ -51,11 +59,29 @@ export function MediaField({
   onChange: (url: string) => void
   disabled?: boolean
   describedBy?: string
+  /**
+   * Increments when the parent form saves successfully. Used only to clear the
+   * "uploaded, not saved yet" notice below.
+   */
+  savedSignal?: number
 }) {
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [brokenPreview, setBrokenPreview] = useState(false)
+
+  /**
+   * A successful upload puts the file on Cloudinary and fills the form field -
+   * it does NOT write the document. That gap has already swallowed real
+   * uploads, so it is called out inline, right next to the preview, until the
+   * form is actually saved.
+   */
+  const [awaitingSave, setAwaitingSave] = useState(false)
+  const [seenSignal, setSeenSignal] = useState(savedSignal)
+  if (seenSignal !== savedSignal) {
+    setSeenSignal(savedSignal)
+    setAwaitingSave(false)
+  }
 
   async function upload(file: File) {
     if (file.size > MAX_BYTES[kind]) {
@@ -223,6 +249,7 @@ export function MediaField({
                 onClick={() => {
                   onChange('')
                   setBrokenPreview(false)
+                  setAwaitingSave(false)
                 }}
               >
                 <Trash2 className="size-3.5" aria-hidden />
@@ -255,6 +282,19 @@ export function MediaField({
             >
               Open in a new tab
             </a>
+          )}
+
+          {awaitingSave && (
+            <p
+              role="status"
+              className="flex items-start gap-1.5 rounded-lg border border-amber-400/40 bg-amber-400/10 px-2.5 py-2 text-xs text-amber-200"
+            >
+              <AlertTriangle className="mt-px size-3.5 shrink-0" aria-hidden />
+              <span>
+                Uploaded but <strong className="font-semibold">not saved yet</strong> &ndash;
+                press &ldquo;Save changes&rdquo; below, or this file will not appear on the site.
+              </span>
+            </p>
           )}
         </div>
       </div>

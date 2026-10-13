@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Controller,
@@ -69,6 +69,12 @@ export function ResourceForm({
   const [isPending, startTransition] = useTransition();
   const [justSaved, setJustSaved] = useState(false);
 
+  /**
+   * Incremented on every successful save. Media fields watch it to clear their
+   * "uploaded, not saved yet" notice.
+   */
+  const [saveCount, setSaveCount] = useState(0);
+
   const defaultValues = Object.fromEntries(
     config.fields.map((field) => {
       const current = initialValues[field.name];
@@ -91,6 +97,29 @@ export function ResourceForm({
     defaultValues,
     mode: "onBlur",
   });
+
+  /**
+   * Browser-level guard against losing unsaved work.
+   *
+   * Uploading a file and then navigating away without pressing Save has
+   * already cost real uploads: the file reaches Cloudinary but the document is
+   * never written. The toast and the "Unsaved changes" indicator help, but
+   * neither can stop a closed tab or a typed URL. This does.
+   *
+   * It only covers full page unloads - the App Router has no public hook for
+   * intercepting client-side navigation - so the in-page indicator still
+   * matters for moving between admin screens.
+   */
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [isDirty]);
 
   /**
    * List fields are edited as raw text, so entries arrive with stray
@@ -146,6 +175,7 @@ export function ResourceForm({
 
       toast.success(result.message ?? "Saved.");
       setJustSaved(true);
+      setSaveCount((count) => count + 1);
       setTimeout(() => setJustSaved(false), 2200);
 
       if (config.singleton) {
@@ -240,6 +270,7 @@ export function ResourceForm({
                       control,
                       register,
                       isPending,
+                      saveCount,
                       refOptions,
                       describedBy,
                       invalid: Boolean(error),
@@ -334,6 +365,7 @@ function renderControl({
   control,
   register,
   isPending,
+  saveCount,
   refOptions,
   describedBy,
   invalid,
@@ -345,6 +377,7 @@ function renderControl({
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   register: any;
   isPending: boolean;
+  saveCount: number;
   refOptions: Record<string, { value: string; label: string }[]>;
   describedBy?: string;
   invalid: boolean;
@@ -444,6 +477,7 @@ function renderControl({
           render={({ field: controlled }) => (
             <MediaField
               id={id}
+              savedSignal={saveCount}
               kind={field.type === "pdf" ? "pdf" : "image"}
               value={String(controlled.value ?? "")}
               onChange={controlled.onChange}
