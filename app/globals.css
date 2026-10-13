@@ -296,6 +296,28 @@
     will-change: transform, opacity;
   }
 
+  /*
+   * Hero portrait frame.
+   *
+   * The gradient ring is always on here rather than hover-only like
+   * `.glass-ring`: this is the focal point of the page, not a card in a grid.
+   * The ring is a 1.5px gradient padding with the image clipped by the inner
+   * wrapper.
+   *
+   * No `overflow: hidden` on this element - the glow below is its own
+   * box-shadow and would be clipped by it. The parent carries `.glow-room` to
+   * give that shadow somewhere to paint.
+   */
+  .portrait-frame {
+    position: relative;
+    border-radius: 1.75rem;
+    padding: 1.5px;
+    background-image: var(--gradient-neon);
+    box-shadow:
+      0 0 70px -22px color-mix(in oklab, var(--color-neon-violet) 90%, transparent),
+      0 0 40px -18px color-mix(in oklab, var(--color-neon-cyan) 75%, transparent);
+  }
+
   /* --- Glow halo -------------------------------------------------------- */
   /*
    * The halo is a blurred pseudo-element with NEGATIVE inset, so it extends

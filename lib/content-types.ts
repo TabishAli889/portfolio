@@ -11,6 +11,8 @@ export type Hero = {
   name: string
   roles: string[]
   tagline: string
+  imageUrl: string
+  imageAlt: string
   primaryCtaLabel: string
   primaryCtaHref: string
   secondaryCtaLabel: string
@@ -21,7 +23,6 @@ export type Hero = {
 export type About = {
   heading: string
   paragraphs: string[]
-  imageUrl: string
   facts: { label: string; value: string }[]
 }
 

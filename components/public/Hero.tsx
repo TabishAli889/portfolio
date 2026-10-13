@@ -1,12 +1,15 @@
 'use client'
 
+import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowDown, Download, MapPin, Send } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Hero as HeroContent, SiteSettings } from '@/lib/content-types'
+import { cloudinaryImageUrl, isOptimizable } from '@/lib/images'
 
 /**
- * Hero with a typewriter that cycles the roles from the database.
+ * Hero with a typewriter that cycles the roles from the database, and an
+ * optional portrait beside it.
  *
  * The first role is rendered on the server as plain text, so the heading has
  * its final size in the very first paint. That is what stops the typewriter
@@ -28,10 +31,23 @@ export function Hero({
   // layout as shorter roles type out.
   const longestRole = roles.reduce((a, b) => (b.length > a.length ? b : a), '')
 
+  const hasPortrait = hero.imageUrl.trim() !== ''
+
   return (
     <section className="section relative flex min-h-[calc(100dvh-var(--header-height))] items-center pt-10">
       <div className="shell">
-        <div className="max-w-3xl">
+        {/*
+          Two columns once there is a portrait and the screen is wide enough;
+          a single column otherwise, which is also the no-image layout.
+        */}
+        <div
+          className={
+            hasPortrait
+              ? 'grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16'
+              : ''
+          }
+        >
+          <div className={hasPortrait ? 'max-w-2xl lg:order-1' : 'max-w-3xl'}>
           {hero.greeting && (
             <motion.p
               initial={reduceMotion ? false : { opacity: 0, y: 12 }}
@@ -130,6 +146,45 @@ export function Hero({
               </a>
             )}
           </motion.div>
+          </div>
+
+          {hasPortrait && (
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, delay: 0.18, ease: [0.21, 0.6, 0.35, 1] }}
+              /*
+                `lg:order-2` keeps the portrait on the right on desktop while
+                it sits above the text on mobile, where a face reads as a
+                stronger opening than a wall of type. glow-room reserves space
+                for the frame's glow.
+              */
+              className="glow-room order-first mx-auto w-44 sm:w-52 lg:order-2 lg:mx-0 lg:w-full lg:max-w-sm"
+            >
+              <div className="portrait-frame">
+                {/* The clipping lives here, not on the frame - see globals.css. */}
+                <div className="relative aspect-4/5 w-full overflow-hidden rounded-[1.65rem] bg-ink-800">
+                  <Image
+                    src={cloudinaryImageUrl(hero.imageUrl, { width: 720, height: 900 })}
+                    alt={hero.imageAlt || `Portrait of ${hero.name}`}
+                    fill
+                    sizes="(max-width: 640px) 11rem, (max-width: 1024px) 13rem, 24rem"
+                    /* Above the fold and the likely LCP element, so it is
+                       fetched eagerly rather than lazily. */
+                    priority
+                    className="object-cover"
+                    unoptimized={!isOptimizable(hero.imageUrl)}
+                  />
+
+                  {/* Keeps the lower edge readable against the aurora. */}
+                  <div
+                    aria-hidden
+                    className="absolute inset-0 bg-[linear-gradient(to_top,rgba(4,5,10,0.45),transparent_45%)]"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 

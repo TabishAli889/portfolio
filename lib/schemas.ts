@@ -53,6 +53,8 @@ export const heroSchema = z.object({
   name: requiredText(120, 'Name'),
   roles: stringList(12, 80),
   tagline: text(400).default(''),
+  imageUrl: optionalUrl(),
+  imageAlt: text(240).default(''),
   primaryCtaLabel: text(60).default(''),
   primaryCtaHref: text(300).default(''),
   secondaryCtaLabel: text(60).default(''),
@@ -63,7 +65,9 @@ export const heroSchema = z.object({
 export const aboutSchema = z.object({
   heading: requiredText(120, 'Heading'),
   paragraphs: stringList(20, 2000),
-  imageUrl: optionalUrl(),
+  // No `imageUrl` here: the portrait lives on the hero now. Keeping it with a
+  // `.default('')` would blank the stored value on every save of this form,
+  // which is the same trap that `order` had.
   facts: z
     .array(
       z.object({

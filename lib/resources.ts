@@ -123,6 +123,18 @@ export const RESOURCES: Record<ResourceKey, ResourceConfig> = {
         help: 'One role per line. These cycle through the typewriter effect.',
       },
       { name: 'tagline', label: 'Tagline', type: 'textarea', rows: 3 },
+      {
+        name: 'imageUrl',
+        label: 'Portrait',
+        type: 'image',
+        help: 'Shown beside your name. A roughly 4:5 portrait crop works best.',
+      },
+      {
+        name: 'imageAlt',
+        label: 'Portrait alt text',
+        type: 'text',
+        help: 'Describes the photo for screen readers. Defaults to "Portrait of <your name>".',
+      },
       { name: 'primaryCtaLabel', label: 'Primary button label', type: 'text', half: true },
       {
         name: 'primaryCtaHref',
@@ -167,7 +179,6 @@ export const RESOURCES: Record<ResourceKey, ResourceConfig> = {
         rows: 10,
         help: 'One paragraph per line. Blank lines are ignored.',
       },
-      { name: 'imageUrl', label: 'Portrait', type: 'image' },
       {
         name: 'facts',
         label: 'Quick facts',

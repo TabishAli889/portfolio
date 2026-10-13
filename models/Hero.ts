@@ -9,6 +9,9 @@ const HeroSchema = new Schema(
     /** Rotated by the typewriter effect in the hero. */
     roles: { type: [String], default: [] },
     tagline: { type: String, default: '', trim: true, maxlength: 400 },
+    /** Portrait shown beside the hero text. */
+    imageUrl: { type: String, default: '', trim: true, maxlength: 600 },
+    imageAlt: { type: String, default: '', trim: true, maxlength: 240 },
     primaryCtaLabel: { type: String, default: 'View my work', trim: true, maxlength: 60 },
     primaryCtaHref: { type: String, default: '#projects', trim: true, maxlength: 300 },
     secondaryCtaLabel: { type: String, default: 'Get in touch', trim: true, maxlength: 60 },

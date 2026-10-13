@@ -1,18 +1,27 @@
-import Image from 'next/image'
-import { cloudinaryImageUrl, isOptimizable } from '@/lib/images'
 import type { About } from '@/lib/content-types'
 import { Reveal, RevealItem, RevealStagger } from './Reveal'
 import { SectionHeading } from './SectionHeading'
 
+/**
+ * The portrait used to live here. It now sits in the hero, so this section is
+ * prose plus the quick-fact chips - and the column split is narrower, since
+ * the right-hand column no longer has an image to hold.
+ */
 export function AboutSection({ about }: { about: About }) {
-  if (about.paragraphs.length === 0 && !about.imageUrl && about.facts.length === 0) return null
+  if (about.paragraphs.length === 0 && about.facts.length === 0) return null
+
+  const hasFacts = about.facts.length > 0
 
   return (
     <section id="about" className="section">
       <div className="shell">
         <SectionHeading index="01" title={about.heading || 'About me'} />
 
-        <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr] lg:gap-16">
+        <div
+          className={
+            hasFacts ? 'grid gap-12 lg:grid-cols-[1.7fr_1fr] lg:gap-16' : 'max-w-3xl'
+          }
+        >
           <div className="space-y-5">
             {about.paragraphs.map((paragraph, index) => (
               <Reveal key={index} delay={index * 0.07}>
@@ -22,33 +31,7 @@ export function AboutSection({ about }: { about: About }) {
           </div>
 
           <div className="space-y-7">
-            {about.imageUrl && (
-              <Reveal className="glow-room">
-                {/*
-                  No `overflow-hidden` on this element, deliberately. Its halo
-                  is a ::before at inset -28px, and `overflow: hidden` clips an
-                  element's own pseudo-elements - so putting it here would make
-                  the glow vanish. The image is clipped to the rounded corners
-                  by the inner wrapper below instead, which carries no glow.
-                */}
-                <div className="glass glass-ring glow-halo glow-halo-violet relative p-2">
-
-                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-ink-800">
-                    <Image
-                      src={cloudinaryImageUrl(about.imageUrl, { width: 720, height: 900 })}
-                      alt=""
-                      fill
-                      sizes="(max-width: 1024px) 90vw, 380px"
-                      className="object-cover"
-                      unoptimized={!isOptimizable(about.imageUrl)}
-                      // Below the fold, so no priority hint: it lazy-loads.
-                    />
-                  </div>
-                </div>
-              </Reveal>
-            )}
-
-            {about.facts.length > 0 && (
+            {hasFacts && (
               <RevealStagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1" as="div">
                 {about.facts.map((fact) => (
                   <RevealItem

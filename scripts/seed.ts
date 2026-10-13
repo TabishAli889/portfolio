@@ -45,6 +45,9 @@ const hero = {
   ],
   tagline:
     'I build AI systems that actually ship - retrieval pipelines, local-first assistants and the web apps around them.',
+  // Upload a portrait under Hero in the admin; the section hides it when empty.
+  imageUrl: '',
+  imageAlt: '',
   primaryCtaLabel: 'View my work',
   primaryCtaHref: '#projects',
   secondaryCtaLabel: 'Get in touch',
@@ -60,7 +63,6 @@ const about = {
     'Most of my work sits around retrieval-augmented generation: chunking and embedding strategies, vector search, prompt orchestration with LangChain, and FastAPI services to put it all behind a clean interface. As an AI Engineering Intern at Excellence Code Solutions I built RAG systems end to end, from document ingestion through to evaluation.',
     'I care about systems that degrade gracefully. Kalvara, my local-first AI assistant, falls back across multiple providers so a dead API key never means a dead app. That instinct - plan for the failure, not the demo - is what I bring to a team.',
   ],
-  imageUrl: '',
   facts: [
     { label: 'Based in', value: 'Lahore, Pakistan' },
     { label: 'Focus', value: 'Applied AI & RAG' },

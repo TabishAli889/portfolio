@@ -58,6 +58,8 @@ const DEFAULT_HERO: Hero = {
   name: "Your Name",
   roles: [],
   tagline: "",
+  imageUrl: "",
+  imageAlt: "",
   primaryCtaLabel: "View my work",
   primaryCtaHref: "#projects",
   secondaryCtaLabel: "Get in touch",
@@ -68,7 +70,6 @@ const DEFAULT_HERO: Hero = {
 const DEFAULT_ABOUT: About = {
   heading: "About me",
   paragraphs: [],
-  imageUrl: "",
   facts: [],
 };
 
