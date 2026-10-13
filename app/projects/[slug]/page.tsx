@@ -9,7 +9,7 @@ import {
   getSiteSettings,
   getSocialLinks,
 } from "@/lib/data";
-import { cloudinaryImageUrl } from "@/lib/cloudinary";
+import { cloudinaryImageUrl, isOptimizable } from "@/lib/images";
 import { renderMarkdown, stripMarkdown } from "@/lib/markdown";
 import { AuroraBackground } from "@/components/public/AuroraBackground";
 import { SiteFooter } from "@/components/public/SiteFooter";
@@ -166,6 +166,7 @@ export default async function ProjectPage({
                     sizes="(max-width: 768px) 92vw, 768px"
                     priority
                     className="object-cover"
+                    unoptimized={!isOptimizable(project.imageUrl)}
                   />
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { cloudinaryImageUrl } from '@/lib/cloudinary'
+import { cloudinaryImageUrl, isOptimizable } from '@/lib/images'
 import type { About } from '@/lib/content-types'
 import { Reveal, RevealItem, RevealStagger } from './Reveal'
 import { SectionHeading } from './SectionHeading'
@@ -40,6 +40,7 @@ export function AboutSection({ about }: { about: About }) {
                       fill
                       sizes="(max-width: 1024px) 90vw, 380px"
                       className="object-cover"
+                      unoptimized={!isOptimizable(about.imageUrl)}
                       // Below the fold, so no priority hint: it lazy-loads.
                     />
                   </div>

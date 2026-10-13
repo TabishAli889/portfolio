@@ -4,6 +4,7 @@ import { useId, useRef, useState } from 'react'
 import Image from 'next/image'
 import { FileText, ImageOff, Loader2, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
+import { isOptimizable } from '@/lib/images'
 
 /**
  * Cloudinary upload with live preview.
@@ -157,7 +158,7 @@ export function MediaField({
               sizes="96px"
               className="object-cover"
               onError={() => setBrokenPreview(true)}
-              unoptimized={value.endsWith('.svg')}
+              unoptimized={!isOptimizable(value)}
             />
           ) : value && kind === 'pdf' ? (
             <div className="flex size-full items-center justify-center text-neon-cyan">

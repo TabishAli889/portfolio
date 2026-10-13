@@ -13,6 +13,7 @@ import {
 import { ArrowRight, Globe, Star } from 'lucide-react'
 import type { Project } from '@/lib/content-types'
 import { GithubIcon } from '@/components/ui/BrandIcons'
+import { isOptimizable } from '@/lib/images'
 
 /**
  * Project card with a pointer-tracked tilt and a glow that follows the cursor.
@@ -102,6 +103,7 @@ export function ProjectCard({
             sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 30vw"
             priority={priority}
             loading={priority ? undefined : 'lazy'}
+            unoptimized={!isOptimizable(imageUrl)}
             className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
           />
           <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(4,5,10,0.6),transparent_55%)]" />

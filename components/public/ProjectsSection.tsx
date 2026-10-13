@@ -1,4 +1,4 @@
-import { cloudinaryImageUrl } from '@/lib/cloudinary'
+import { cloudinaryImageUrl } from '@/lib/images'
 import type { Project } from '@/lib/content-types'
 import { RevealItem, RevealStagger } from './Reveal'
 import { SectionHeading } from './SectionHeading'

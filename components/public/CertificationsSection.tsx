@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { Award, ExternalLink } from 'lucide-react'
-import { cloudinaryImageUrl } from '@/lib/cloudinary'
+import { cloudinaryImageUrl, isOptimizable } from '@/lib/images'
 import type { Certification } from '@/lib/content-types'
 import { RevealItem, RevealStagger } from './Reveal'
 import { SectionHeading } from './SectionHeading'
@@ -42,6 +42,7 @@ export function CertificationsSection({
                       width={40}
                       height={40}
                       className="size-full object-cover"
+                      unoptimized={!isOptimizable(item.imageUrl)}
                     />
                   ) : (
                     <Award className="size-4.5" aria-hidden />

@@ -615,6 +615,22 @@ preset, so it cannot be redirected by a caller.
 
 Signed uploads remain the default whenever `CLOUDINARY_UPLOAD_PRESET` is unset.
 
+**`Invalid src prop ... hostname "res.cloudinary.com" is not configured`.**
+`next/image` only optimises hosts listed in `images.remotePatterns`, which is
+configured in `next.config.ts`. Changes to that file need a dev-server
+restart - hot reload does not pick it up.
+
+The pattern is scoped to `/${CLOUDINARY_CLOUD_NAME}/**` when that variable is
+available at build time (it is on Vercel), so the image optimiser cannot be
+used as an open proxy for other people's Cloudinary accounts. If the variable
+is not set at build time the pattern falls back to the whole host, which still
+works.
+
+An image URL *pasted* into the admin rather than uploaded will be on some other
+host. Those render with `unoptimized`, which serves the URL as-is and skips
+both the optimiser and the host check - so pasted URLs keep working without
+allowlisting the internet. See `isOptimizable` in `lib/images.ts`.
+
 **The Next.js logo sits in the bottom-left corner.**
 That is the Next.js dev indicator, which only renders under `npm run dev` and
 never in a production build. It is switched off via `devIndicators: false` in

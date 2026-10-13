@@ -75,28 +75,3 @@ export function createUploadConfig(kind: UploadKind): UploadConfig {
 
   return { mode: 'signed', signature, timestamp, apiKey, cloudName, folder }
 }
-
-/**
- * Builds a transformed delivery URL from a Cloudinary image URL: resized,
- * auto-format (AVIF/WebP where supported) and auto-quality. Non-Cloudinary
- * URLs pass through untouched so the admin can also paste an external image.
- */
-export function cloudinaryImageUrl(
-  url: string,
-  { width, height, crop = 'fill' }: { width: number; height?: number; crop?: string },
-): string {
-  if (!url.includes('/upload/')) return url
-
-  const transform = [
-    'f_auto',
-    'q_auto',
-    `w_${width}`,
-    height ? `h_${height}` : null,
-    height ? `c_${crop}` : null,
-    'dpr_auto',
-  ]
-    .filter(Boolean)
-    .join(',')
-
-  return url.replace('/upload/', `/upload/${transform}/`)
-}
