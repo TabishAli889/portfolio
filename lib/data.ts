@@ -188,7 +188,7 @@ export async function getExperience(): Promise<Experience[]> {
 export async function getProjects(): Promise<Project[]> {
   "use cache";
   cacheTag(CACHE_TAGS.projects);
-  cacheLife("max");
+  cacheLife("minutes");
 
   await connectToDatabase();
   const docs = await ProjectModel.find(PUBLISHED).sort(BY_ORDER).lean();
@@ -198,7 +198,7 @@ export async function getProjects(): Promise<Project[]> {
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
   "use cache";
   cacheTag(CACHE_TAGS.projects);
-  cacheLife("max");
+  cacheLife("minutes");
 
   await connectToDatabase();
   const doc = await ProjectModel.findOne({ ...PUBLISHED, slug }).lean();
