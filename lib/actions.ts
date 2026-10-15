@@ -1,6 +1,6 @@
 'use server'
 
-import { updateTag } from 'next/cache'
+import { updateTag, revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { connectToDatabase } from './mongodb'
 import { requireAdmin, UnauthorizedError } from './auth-guard'
@@ -64,6 +64,9 @@ function resolveResource(resource: string) {
 function purge(resource: ResourceKey) {
   for (const tag of tagsFor(resource)) {
     updateTag(tag)
+  }
+  if (resource === 'projects') {
+    revalidatePath('/projects/[slug]', 'page')
   }
 }
 

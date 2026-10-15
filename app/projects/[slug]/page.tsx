@@ -196,7 +196,7 @@ export default async function ProjectPage({
 
           {/* Tech + highlights */}
           <div className="mt-10 grid gap-8 sm:grid-cols-2">
-            {project.techTags.length > 0 && (
+            { (project.techTags || []).length > 0 && (
               <Reveal>
                 <h2 className="font-mono text-xs tracking-[0.18em] text-neon-cyan/80 uppercase">
                   Built with
@@ -211,7 +211,7 @@ export default async function ProjectPage({
               </Reveal>
             )}
 
-            {project.highlights.length > 0 && (
+            { (project.highlights || []).length > 0 && (
               <Reveal delay={0.06}>
                 <h2 className="font-mono text-xs tracking-[0.18em] text-neon-violet/80 uppercase">
                   Highlights
